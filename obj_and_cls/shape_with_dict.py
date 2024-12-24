@@ -35,6 +35,10 @@ def new_circle_thing(name, radius):
   }
 
 
+def call(thing, method_name):
+  return thing[method_name](thing)
+
+
 if __name__ == "__main__":
   things = [
     new_square_thing("sq", 3),
@@ -43,6 +47,6 @@ if __name__ == "__main__":
 
   for thing in things:
     n = thing["name"]
-    p = thing["perimeter"](thing)
-    a = thing["area"](thing)
+    p = call(thing, "perimeter")
+    a = call(thing, "area")
     print(f"name: {n}, perimeter: {p:.2f}, area: {a:.2f}")
