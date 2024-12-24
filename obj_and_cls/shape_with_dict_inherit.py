@@ -87,9 +87,9 @@ Circle = {
 ### Function call tool ###
 
 
-def call(thing, method_name, *args):
+def call(thing, method_name, *args, **kwargs):
   method = find(thing['_class'], method_name)
-  return method(thing, *args)
+  return method(thing, *args, **kwargs)
 
 
 def find(_cls, method_name):
@@ -103,14 +103,14 @@ def find(_cls, method_name):
 ### Make tool ###
 
 
-def make(_cls, *args):
-    return _cls["_new"](*args)
+def make(_cls, *args, **kwargs):
+    return _cls["_new"](*args, **kwargs)
 
 
 if __name__ == "__main__":
   things = [
-    make(Square, "sq", 3),
-    make(Circle, "ci", 2),
+    make(Square, "sq", side=3),
+    make(Circle, "ci", radius=2),
   ]
 
   for thing in things:
