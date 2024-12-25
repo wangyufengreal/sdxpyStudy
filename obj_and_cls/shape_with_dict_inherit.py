@@ -17,10 +17,21 @@ def damage(thing):
   return f"{thing['attribute']}*{thing['strength']:.1f}"
 
 
+def classmethod_get_environment_magic_density(_cls):
+  return _cls["environment_magic_density"]
+
+
+def staticmethod_damage_gain(damage, gain_coeff):
+  return damage * gain_coeff
+
+
 Magic = {
   "_classname": "magic",
   "_parent": None,
   "damage": damage,
+  "classmethod_get_environment_magic_density": classmethod_get_environment_magic_density,
+  "environment_magic_density": 666.66,
+  "staticmethod_damage_gain": staticmethod_damage_gain,
   "_new": new_magic_thing
 }
 
@@ -113,11 +124,22 @@ Circle = {
 
 
 def call(thing, method_name, *args, **kwargs):
-  method = find(thing['_class'], method_name)
-  if method is None:
-    raise ValueError("You call a method i can't find!")
-  return method(thing, *args, **kwargs)
+  # Parameters check
+  if not isinstance(thing, dict):
+    raise ValueError("thing must be dict type!")
 
+  if method_name.startswith("staticmethod"):
+    return thing[method_name](*args, **kwargs)
+  elif method_name.startswith("classmethod"):
+    # class method process
+    return thing[method_name](thing, *args, **kwargs)
+  else:
+    # object instance function process
+    method = find(thing['_class'], method_name)
+    if method is None:
+      raise ValueError("You call a method i can't find!")
+    return method(thing, *args, **kwargs)
+  
 
 def find(_cls, method_name, seen=None):
 
@@ -172,4 +194,10 @@ if __name__ == "__main__":
     n = thing["name"]
     d = call(thing, "damage")
 
-    print(f"n: {n} -> cause damage: {d}")
+    print(f"name: {n} -> cause damage: {d}")
+
+  e = call(Magic, "classmethod_get_environment_magic_density")
+  print(f"environment magic density: {e}")
+
+  gd = call(Magic, "staticmethod_damage_gain", 8, 2.0)
+  print(f"gained damage is: {gd}")
