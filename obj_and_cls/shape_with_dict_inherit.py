@@ -1,5 +1,30 @@
 import math
 
+
+### Magic ###
+# This is a world make up of sword and magic ~
+# Every thing have its magic.
+
+
+def new_magic_thing(attribute, strength):
+  return {
+    "attribute": attribute,
+    "strength": strength,
+  }
+
+
+def damage(thing):
+  return f"{thing['attribute']}*{thing['strength']:.1f}"
+
+
+Magic = {
+  "_classname": "magic",
+  "_parent": None,
+  "damage": damage,
+  "_new": new_magic_thing
+}
+
+
 ### Shape ###
 
 def shape_density(thing, weight):
@@ -35,8 +60,8 @@ def is_square_larger(thing, size):
   return call(thing, "area") > size
 
 
-def new_square_thing(name, side):
-  return make(Shape, name) | {
+def new_square_thing(name, side, attribute, strength):
+  return make(Shape, name) | make(Magic, attribute, strength) | {
     "side": side,
     "_class": Square,
   }
@@ -47,7 +72,7 @@ Square = {
   "larger": is_square_larger,
   "perimeter": get_square_perimeter,
   "area": get_square_area,
-  "_parent": Shape,
+  "_parent": [Shape, Magic],
   "_new": new_square_thing,
 }
 
@@ -67,8 +92,8 @@ def is_circle_larger(thing, size):
   return call(thing, "area") > size
 
 
-def new_circle_thing(name, radius):
-  return make(Shape, name) | {
+def new_circle_thing(name, radius, attribute, strength):
+  return make(Shape, name) | make(Magic, attribute, strength) | {
     "radius": radius,
     "_class": Circle,
   }
@@ -79,7 +104,7 @@ Circle = {
   "larger": is_circle_larger,
   "perimeter": get_circle_perimeter,
   "area": get_circle_area,
-  "_parent": Shape,
+  "_parent": [Shape, Magic],
   "_new": new_circle_thing,
 }
 
@@ -89,15 +114,45 @@ Circle = {
 
 def call(thing, method_name, *args, **kwargs):
   method = find(thing['_class'], method_name)
+  if method is None:
+    raise ValueError("You call a method i can't find!")
   return method(thing, *args, **kwargs)
 
 
-def find(_cls, method_name):
-  while _cls is not None:
-    if method_name in _cls:
-      return _cls[method_name]
-    _cls = _cls["_parent"]
-  raise NotImplementedError(f"method_name: {method_name}")
+def find(_cls, method_name, seen=None):
+
+  # Parameters check
+  if not isinstance(_cls, dict):
+    raise ValueError("class is not dict type!")
+  if not isinstance(method_name, str):
+    raise ValueError("method name is not str type!")
+
+  if seen is None:
+    seen = set()
+  
+  cls_id = id(_cls)
+  if cls_id in seen:
+    return None
+  seen.add(cls_id)
+
+  # Is the method i want in this class?
+  if method_name in _cls.keys():
+    return _cls[method_name]
+  
+  # Is this class have parent class?
+  if "_parent" in _cls.keys():
+    if isinstance(_cls["_parent"], list):
+      for p_cls in _cls["_parent"]:
+        res = find(p_cls, method_name, seen)
+        if res is not None:
+          return res
+    if isinstance(_cls["_parent"], dict):
+      res = find(_cls["_parent"], method_name, seen)
+      if res is not None:
+        return res
+      
+  return None
+
 
 
 ### Make tool ###
@@ -109,11 +164,12 @@ def make(_cls, *args, **kwargs):
 
 if __name__ == "__main__":
   things = [
-    make(Square, "sq", side=3),
-    make(Circle, "ci", radius=2),
+    make(Square, "sq", side=3, attribute="ice", strength=5),
+    make(Circle, "ci", radius=2, attribute="fire", strength=8),
   ]
 
   for thing in things:
     n = thing["name"]
-    d = call(thing, "density", 10)
-    print(f"name: {n}, which weight is 10, density is: {d:.2f}")
+    d = call(thing, "damage")
+
+    print(f"n: {n} -> cause damage: {d}")
