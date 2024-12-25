@@ -10,6 +10,7 @@ def new_magic_thing(attribute, strength):
   return {
     "attribute": attribute,
     "strength": strength,
+    "_cache": None
   }
 
 
@@ -45,7 +46,8 @@ def shape_density(thing, weight):
 def new_shape_thing(name):
   return {
     "name": name,
-    "_class": Shape
+    "_class": Shape,
+    "_cache": None
   }
 
 
@@ -75,6 +77,7 @@ def new_square_thing(name, side, attribute, strength):
   return make(Shape, name) | make(Magic, attribute, strength) | {
     "side": side,
     "_class": Square,
+    "_cache": None
   }
 
 
@@ -107,6 +110,7 @@ def new_circle_thing(name, radius, attribute, strength):
   return make(Shape, name) | make(Magic, attribute, strength) | {
     "radius": radius,
     "_class": Circle,
+    "_cache": None
   }
 
 
@@ -135,9 +139,19 @@ def call(thing, method_name, *args, **kwargs):
     return thing[method_name](thing, *args, **kwargs)
   else:
     # object instance function process
+    # first of all, we check cache
+    if thing["_cache"] is not None and isinstance(thing["_cache"], dict):
+      if method_name in thing["_cache"].keys():
+        print("cache.....")
+        return thing["_cache"][method_name]
     method = find(thing['_class'], method_name)
     if method is None:
       raise ValueError("You call a method i can't find!")
+    
+    # save to method cache
+    if thing["_cache"] is None:
+      thing["_cache"] = {}
+    thing["_cache"][method_name] = method
     return method(thing, *args, **kwargs)
   
 
@@ -238,6 +252,7 @@ if __name__ == "__main__":
 
   for thing in things:
     n = thing["name"]
+    d = call(thing, "damage")
     d = call(thing, "damage")
     t = fake_type(thing)
     print(f"type: {t}")
