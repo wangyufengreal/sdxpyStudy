@@ -184,15 +184,65 @@ def make(_cls, *args, **kwargs):
     return _cls["_new"](*args, **kwargs)
 
 
+### Type tool ###
+
+
+def fake_type(thing):
+  if "_class" in thing.keys():
+    return thing["_class"]["_classname"]
+  elif "_classname" in thing.keys():
+    return thing["_classname"]
+  
+
+def fake_isinstance(thing, _type):
+  
+  # judge thing's class
+  if not "_class" in thing.keys():
+    raise ValueError("only instance can be judged!")
+  
+  base_cls = thing["_class"]
+
+  return is_type_in_parents(base_cls, _type)
+
+
+def is_type_in_parents(_cls, _type):
+  if id(_cls) == id(_type):
+    return True
+  
+  if "_parent" not in _cls.keys():
+    return False
+  
+  if isinstance(_cls["_parent" ], list):
+    for p_cls in _cls["_parent" ]:
+      res = is_type_in_parents(p_cls, _type)
+      if res:
+        return True
+  elif isinstance(_cls["_parent" ], dict):
+    res = is_type_in_parents(p_cls, _type)
+    if res:
+      return True
+  
+  return False
+
+
 if __name__ == "__main__":
   things = [
     make(Square, "sq", side=3, attribute="ice", strength=5),
     make(Circle, "ci", radius=2, attribute="fire", strength=8),
   ]
+   
+  t = fake_type(Circle)
+  print(t)
+
+
 
   for thing in things:
     n = thing["name"]
     d = call(thing, "damage")
+    t = fake_type(thing)
+    print(f"type: {t}")
+
+    print(fake_isinstance(thing, Circle))
 
     print(f"name: {n} -> cause damage: {d}")
 
